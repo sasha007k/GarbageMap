@@ -1,0 +1,93 @@
+﻿@{
+    ViewData["Title"] = "Locations";
+}
+
+<head>
+    <title></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css" integrity="sha512-aOG0c6nPNzGk+5zjwyJaoRUgCdOrfSDhmMID2u4+OIslr0GjpLKo7Xm0Ao3xmpM4T8AmIouRkqwj1nrdVsLKEQ==" crossorigin="anonymous" />
+</head>
+<body>
+
+<div class="btn-group" role="group">
+    <p> @Html.ActionLink("Add District", "AddDistrict", "Admin", new {}, 
+            new {@class = "viewDialog btn btn-light", data_dialog_title = "Add District"})</p>
+    <p> @Html.ActionLink("Add City", "AddCity", "Admin", new {}, 
+            new {@class = "viewDialog btn btn-light", data_dialog_title = "Add City"})</p>
+</div>
+
+<div id="jstree">
+</div>
+</body>
+
+@section scripts
+{
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/jstree.min.js"></script>
+    
+    <script
+        src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"
+        integrity="sha256-T0Vest3yCU7pafRw9r+settMBX6JkKN06dqBnpQ8d30="
+        crossorigin="anonymous"></script>
+
+    <script type="text/javascript">
+        $(function() {
+            $('#jstree').on('changed.jstree',
+                function(e, data) {
+                    var i, j;
+                    var postedItems = [];
+                    for (i = 0, j = data.selected.length; i < j; i++) {
+
+                        var id = data.selected[i];
+
+                        if (id.indexOf('-') != -1) {
+                            id = id.split("-")[1];
+                        }
+
+                        postedItems.push({
+                            text: data.instance.get_node(data.selected[i]).text,
+                            id: id,
+                            parent: data.node.parents[0]
+                        });
+                    }
+
+                    $('#selectedItems').val(JSON.stringify(postedItems));
+
+                }).jstree({
+                "core": {
+                    "themes": {
+                        "variant": "large"
+                    },
+                    "data": @Html.Raw(ViewBag.Json)
+                },
+                "checkbox": {
+                    "keep_selected_style": false
+                },
+                "plugins": ["wholerow"],
+            });
+        });
+    </script>
+
+    <script>
+        $(document).ready(function () {
+ 
+            $.ajaxSetup({ cache: false });
+ 
+            $(".viewDialog").on("click", function (e) {
+                e.preventDefault();
+ 
+                $("<div></div>")
+                    .addClass("dialog")
+                    .appendTo("body")
+                    .dialog({
+                        title: $(this).attr("data-dialog-title"),
+                        close: function () { $(this).remove() },
+                        modal: true,
+                        width: 620,
+                        height: 385
+                    })
+                    .load(this.href);
+            });
+        });
+    </script>
+}

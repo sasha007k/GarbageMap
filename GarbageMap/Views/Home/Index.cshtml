@@ -1,0 +1,131 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<head>
+    <title></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css" integrity="sha512-aOG0c6nPNzGk+5zjwyJaoRUgCdOrfSDhmMID2u4+OIslr0GjpLKo7Xm0Ao3xmpM4T8AmIouRkqwj1nrdVsLKEQ==" crossorigin="anonymous" />
+</head>
+<body>
+    @if (User.IsInRole("admin"))
+    {
+        <p>
+            @Html.ActionLink("Add Camera", "AddCamera", "Home", new { },
+                new { @class = "viewDialog btn btn-light", data_dialog_title = "Add Camera" })
+        </p>
+    }
+
+</body>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC3amkviJ3ysQSwHyFWEZBq2hWrRjobabw&language=en"></script>
+
+<div id="mapDiv" style="height: 600px;"></div>
+
+@section scripts {
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js"></script>
+    <script
+        src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"
+        integrity="sha256-T0Vest3yCU7pafRw9r+settMBX6JkKN06dqBnpQ8d30="
+        crossorigin="anonymous"></script>
+
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+            GetMap();
+        });
+
+        function GetMap() {
+
+            google.maps.visualRefresh = true;
+            var Lviv = new google.maps.LatLng(49.8382600, 24.0232400);
+            //Create Options or set different Characteristics of Google Map
+            var mapOptions = {
+                zoom: 14,
+                center: Lviv,
+                mapTypeId: google.maps.MapTypeId.ROADMAP,
+                styles: [
+                    {
+                        "featureType": "poi",
+                        "stylers": [
+                            { "visibility": "off" }
+                        ]
+                    }
+                ]
+            };
+
+            //Display the Google map in the div control with the defined Options
+            var map = new google.maps.Map(document.getElementById("mapDiv"), mapOptions);
+
+            //Set Marker on the Map
+            var marker = new google.maps.Marker({
+                map: map
+            });
+
+            $.getJSON('@Url.Action("GetAllCameraPlaces", "Home")', function (data) {
+
+                $.each(data, function (i, item) {
+                    var marker = new google.maps.Marker({
+                        'position': new google.maps.LatLng(item.place.latitude, item.place.longitude),
+                        'map': map
+                    });
+
+                    if (item.averageFullfill < 40) {
+                        marker.setIcon('https://maps.google.com/mapfiles/ms/icons/green-dot.png')
+                    } else if (item.averageFullfill < 75) {
+                        marker.setIcon('https://maps.google.com/mapfiles/ms/icons/yellow-dot.png')
+                    } else {
+                        marker.setIcon('https://maps.google.com/mapfiles/ms/icons/red-dot.png')
+                    }
+
+                    // Для каждого объекта добавляем доп. информацию, выводимую в отдельном окне
+                    //var infowindow = new google.maps.InfoWindow({
+                    //    content: "<div class='stationInfo'><h2>Станция " + item.PlaceName + "</h2><div><h4>Линия метро: "
+                    //        + item.Line + "</h4></div><div><h4>Пассажиропоток: " + item.Traffic + " млн. человек</h4></div></div>"
+                    //});
+
+                    // обработчик нажатия на маркер объекта
+                    //google.maps.event.addListener(marker, 'click', function () {
+                    //    infowindow.open(map, marker);
+                    //});
+                })
+
+                var startPossitionMarker = new google.maps.Marker({
+                    'position': new google.maps.LatLng(49.812399, 24.001771),
+                    'map': map
+                });
+                startPossitionMarker.setIcon('https://maps.google.com/mapfiles/ms/icons/blue-dot.png')
+
+                var finishPossitionMarker = new google.maps.Marker({
+                    'position': new google.maps.LatLng(49.900763, 24.034930),
+                    'map': map
+                });
+                finishPossitionMarker.setIcon('https://maps.gstatic.com/mapfiles/ms2/micons/flag.png')                
+
+            });
+        }
+    </script>
+    
+    <script>
+        $(document).ready(function () {
+ 
+            $.ajaxSetup({ cache: false });
+ 
+            $(".viewDialog").on("click", function (e) {
+                e.preventDefault();
+ 
+                $("<div></div>")
+                    .addClass("dialog")
+                    .appendTo("body")
+                    .dialog({
+                        title: $(this).attr("data-dialog-title"),
+                        close: function () { $(this).remove() },
+                        modal: true,
+                        width: 620,
+                        height: 385
+                    })
+                    .load(this.href);
+            });
+        });
+    </script>
+}

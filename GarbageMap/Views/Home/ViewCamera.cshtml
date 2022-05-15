@@ -1,0 +1,43 @@
+﻿@{
+    ViewData["Title"] = "View camera";
+}
+
+<div>
+    <div class="container">
+        <div class="row">
+            <div id="resultImagediv" class="col-sm-12 temp" style="background-color: #ccffee;">
+                <img id="result" src='@ViewData["Result"]'/>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+
+    #result {
+        height: 650px;
+        align-content: center;
+        text-align: center;
+    }
+
+    #resultImagediv {
+        align-content: center;
+        text-align: center;
+        margin-top: 20px;
+        background-color: #ccffee;
+    }
+
+    #processedImageDiv {
+        color: blue;
+        text-align: center;
+    }
+
+    #inputImageDiv {
+        color: blue;
+        text-align: center;
+    }
+
+    .temp {
+        background: #ccffee !important;
+    }
+</style>

@@ -1,0 +1,42 @@
+﻿@model GarbageMap.Models.ViewModels.RegisterViewModel
+
+<section class="container" id="mainsec">
+    <section class="row justify-content-center">
+        <section class="col-12 col-sm-5 col-md-5">
+            <div class="card mt-5 p-0 ml-2">
+
+                <h5 class="card-header default-color white-text text-center py-4" style="background: #17a2b8; color: white">
+                    <strong>Register new user</strong>
+                </h5>
+
+                <div class="card-body px-lg-5" id="registerform">
+                    
+                    <form class="text-center" style="color: #757575;" method="post" method="post" asp-controller="Account" asp-action="Register">
+
+                        <div class="md-form">
+                            <input asp-for="FullName" type="text" id="forname" name="FullName" class="form-control forminput">
+                            <label for="forname">Full Name</label>
+                        </div>
+
+                        <div class="md-form">
+                            <input asp-for="Email" type="email" id="formemail" name="Email" class="form-control forminput">
+                            <label for="formemail">Email</label>
+                        </div>
+
+                        <div class="md-form">
+                            <input asp-for="Password" type="password" id="formpassword" name="Password" class="form-control forminput">
+                            <label for="frompassword">Password</label>
+                        </div>
+
+                        <div class="md-form">
+                            <input asp-for="PasswordConfirm" type="password" id="formpasswordconf" name="PasswordConfirm" class="form-control forminput">
+                            <label for="formpasswordconf">Confirm Password</label>
+                        </div>
+
+                        <button class="btn btn-outline-info btn-rounded btn-block my-4 waves-effect z-depth-0" type="submit">Register</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </section>
+</section>

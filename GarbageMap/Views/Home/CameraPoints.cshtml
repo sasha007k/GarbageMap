@@ -1,0 +1,101 @@
+﻿@model IEnumerable<GarbageMap.Models.ViewModels.CameraPointViewModel>
+
+@{
+    ViewBag.Title = "Camera Points";
+}
+
+<head>
+    <title></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css" integrity="sha512-aOG0c6nPNzGk+5zjwyJaoRUgCdOrfSDhmMID2u4+OIslr0GjpLKo7Xm0Ao3xmpM4T8AmIouRkqwj1nrdVsLKEQ==" crossorigin="anonymous" />
+</head>
+
+<div class="border bg-white">
+    <br />
+    <div>
+        <table class="table table-striped border">
+            <tr class="table-secondary">
+                <th>
+                    Address
+                </th>
+                <th>
+                    Cans Number
+                </th>
+                <th>
+                    Total Capacity
+                </th>
+                <th>
+                    Average Occupancy
+                </th>
+                @if (User.IsInRole("admin"))
+                {
+                    <th>
+                    </th>
+                    <th>
+                    </th>
+                }
+            </tr>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        @item.CameraPlace.ToString()
+                    </td>
+                    <td>
+                        @item.NumberOfCans
+                    </td>
+                    <td>
+                        @item.TotalCapacity
+                    </td>
+                    <td>
+                        @Html.Raw(item.FulfiledPercentage + "%")
+                    </td>
+                    @if (User.IsInRole("admin"))
+                    {
+                        <td>
+                            <p>
+                                @Html.ActionLink("Add Garbage Can", "AddGarbageCan", "Home",
+                                    new { cameraPlaceId = item.CameraPlace.Id }, new { @class = "viewDialog btn btn-light", data_dialog_title = "Add Garbage Can" })
+                            </p>
+                        </td>
+                        <td>
+                            <p>
+                                @Html.ActionLink("View Camera","ViewCamera", "Home", new { cameraPlaceId = item.CameraPlace.Id }, new { @class = "btn btn-light" })
+                            </p>
+                        </td>
+                    }
+                </tr>
+            }
+        </table>
+    </div>
+</div>
+
+@section scripts {
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"
+            integrity="sha256-T0Vest3yCU7pafRw9r+settMBX6JkKN06dqBnpQ8d30="
+            crossorigin="anonymous"></script>
+
+    <script>
+        $(document).ready(function () {
+ 
+            $.ajaxSetup({ cache: false });
+ 
+            $(".viewDialog").on("click", function (e) {
+                e.preventDefault();
+ 
+                $("<div></div>")
+                    .addClass("dialog")
+                    .appendTo("body")
+                    .dialog({
+                        title: $(this).attr("data-dialog-title"),
+                        close: function () { $(this).remove() },
+                        modal: true,
+                        width: 300,
+                        height: 200
+                    })
+                    .load(this.href);
+            });
+        });
+    </script>
+}
