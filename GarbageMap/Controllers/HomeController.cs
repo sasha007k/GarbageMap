@@ -17,6 +17,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Newtonsoft.Json;
 using GarbageMap.Models.ApiModels;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
 
 namespace GarbageMap.Controllers
 {
@@ -25,12 +27,15 @@ namespace GarbageMap.Controllers
         private readonly ApplicationDbContext _context;
         private readonly HttpClient _client;
         private readonly IObjectDetectionService _objectDetectionService;
+        private readonly UserManager<IndividualPerson> _userManager;
 
-        public HomeController(ApplicationDbContext context, HttpClient client, IObjectDetectionService objectDetectionService)
+        public HomeController(ApplicationDbContext context, HttpClient client, IObjectDetectionService objectDetectionService,
+            UserManager<IndividualPerson> userManager)
         {
             _context = context;
             _client = client;
             _objectDetectionService = objectDetectionService;
+            _userManager = userManager;
         }
 
         public IActionResult Index()
@@ -39,9 +44,21 @@ namespace GarbageMap.Controllers
         }
 
         [HttpGet]
-        public JsonResult GetAllCameraPlaces()
+        public async Task<JsonResult> GetAllCameraPlaces()
         {
-            var cameraPlaces = _context?.CameraPlaces?.ToList();
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _userManager.FindByIdAsync(userId);
+            var role = (await _userManager.GetRolesAsync(user))[0];
+            List<CameraPlace> cameraPlaces = null;
+            if (role == "admin")
+            {
+                cameraPlaces = _context?.CameraPlaces?.ToList();
+            }
+            else
+            {
+                cameraPlaces = _context?.CameraPlaces?.Where(x => x.OrganizationId == userId).ToList();
+            }
+
             var garbageCans = _context?.GarbageCans?.ToList();
             var cameraPlaceViewModels = new List<CameraPlaceViewModel>();
             foreach (var place in cameraPlaces)
@@ -108,7 +125,8 @@ namespace GarbageMap.Controllers
         [HttpPost]
         public async Task<ActionResult> AddCamera(AddCameraViewModel viewModel)
         {
-            if (viewModel != null && !string.IsNullOrWhiteSpace(viewModel.Street))
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (viewModel != null && !string.IsNullOrWhiteSpace(viewModel.Street) && !string.IsNullOrWhiteSpace(userId))
             {
                 var city = _context.Cities.FirstOrDefault(c => c.Id == viewModel.CityId);
                 if (city != null)
@@ -150,7 +168,8 @@ namespace GarbageMap.Controllers
                                     Address = addedAddress.Entity, 
                                     AddressId = addedAddress.Entity.Id, 
                                     Latitude = latitude, 
-                                    Longitude = longitude 
+                                    Longitude = longitude,
+                                    OrganizationId = userId
                                 };
                                 await _context.CameraPlaces.AddAsync(cameraPlace);
                                 await _context.SaveChangesAsync();
@@ -163,35 +182,47 @@ namespace GarbageMap.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        public IActionResult CameraPoints()
+        public async Task<IActionResult> CameraPoints()
         {
-            var cameraPlaces = _context.CameraPlaces.Include(p => p.Address)
-                .ThenInclude(p => p.City)
-                .ThenInclude(p => p.District)
-                .ThenInclude(p => p.Region)
-                .Include(p => p.Address)
-                .ThenInclude(p => p.City)
-                .ThenInclude(p => p.Region)
-                .ToList();
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) 
+                return View(new List<CameraPointViewModel>());
+
+            var user = await _userManager.FindByIdAsync(userId);
+            var role = (await _userManager.GetRolesAsync(user))[0];
+            var cameraPlaces = _context.CameraPlaces.AsQueryable();
+            if (role != "admin")
+            {
+                cameraPlaces = cameraPlaces.Where(x => x.OrganizationId == userId);
+            }
+
+            cameraPlaces = cameraPlaces.Include(p => p.Address)
+                            .ThenInclude(p => p.City)
+                            .ThenInclude(p => p.District)
+                            .ThenInclude(p => p.Region)
+                            .Include(p => p.Address)
+                            .ThenInclude(p => p.City)
+                            .ThenInclude(p => p.Region);
 
             var cameraPoints = new List<CameraPointViewModel>();
-
-            foreach (var place in cameraPlaces)
+            foreach (var place in cameraPlaces.ToList())
             {
                 var garbageCans = _context.GarbageCans.Where(g => g.CameraPlaceId == place.Id)
-                    .Include(g => g.CameraPlace)
-                    .Include(g => g.GarbageCanType).ToList();
+                .Include(g => g.CameraPlace)
+                .Include(g => g.GarbageCanType).ToList();
 
                 var numberOfCans = garbageCans.Count();
                 var totalCapacity = garbageCans.Select(g => g.GarbageCanType.Capacity).Sum();
                 var averageFullFil = garbageCans.Any() ? garbageCans.Average(x => x.FulfiledPercentage) : 0;
+                var userFullName = (await _userManager.FindByIdAsync(place.OrganizationId))?.FullName;
 
                 cameraPoints.Add(new CameraPointViewModel() 
                 {
                     CameraPlace = place, 
                     NumberOfCans = numberOfCans, 
                     TotalCapacity = totalCapacity,
-                    FulfiledPercentage = Math.Round(averageFullFil, 2)
+                    FulfiledPercentage = Math.Round(averageFullFil, 2),
+                    Organization = userFullName
                 });
             }
 
@@ -239,9 +270,7 @@ namespace GarbageMap.Controllers
                 var imageInputData = new ImageInputData { Image = image };
 
                 var result = DetectAndPaintImage(
-                    imageInputData,
-                    60,
-                    80);
+                    imageInputData, 60, 80);
 
                 ViewData["Result"] = "data:image/jpeg;base64," + result;
             }

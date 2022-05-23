@@ -23,10 +23,13 @@
                 <th>
                     Total Capacity
                 </th>
-                <th>
+@*                <th>
                     Average Occupancy
+                </th>*@
+                <th>
+                    Organization
                 </th>
-                @if (User.IsInRole("admin"))
+                @if (User.IsInRole("organization"))
                 {
                     <th>
                     </th>
@@ -46,10 +49,13 @@
                     <td>
                         @item.TotalCapacity
                     </td>
-                    <td>
+                    @*<td>
                         @Html.Raw(item.FulfiledPercentage + "%")
+                    </td>*@
+                    <td>
+                        @item.Organization
                     </td>
-                    @if (User.IsInRole("admin"))
+                    @if (User.IsInRole("organization"))
                     {
                         <td>
                             <p>

@@ -8,5 +8,6 @@ namespace GarbageMap.Models.ViewModels
         public int NumberOfCans { get; set; }
         public int TotalCapacity { get; set; }
         public double FulfiledPercentage { get; set; }
+        public string Organization { get; set; }
     }
 }

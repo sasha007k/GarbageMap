@@ -21,18 +21,24 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Map</a>
                         </li>
-                        @if (User.IsInRole("admin"))
-                        {
+                        @if (User.IsInRole("organization") || User.IsInRole("admin"))
+                                    {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="AllLocations">All Locations</a>
                             </li>
                         }
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="CameraPoints">Camera Points</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Route" asp-action="Index">Build Route</a>
-                        </li>
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="CameraPoints">Camera Points</a>
+                            </li>
+                        }
+                        @if (User.IsInRole("organization"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Route" asp-action="Index">Build Route</a>
+                            </li>
+                        }
                     </ul>
                 </div>
             </div>

@@ -1,6 +1,7 @@
 ﻿using GarbageMap.Models;
 using GarbageMap.Models.ApiModels;
 using GarbageMap.Models.DbModels;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
@@ -10,6 +11,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace GarbageMap.Controllers
@@ -18,8 +20,9 @@ namespace GarbageMap.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly string APIKEY = "AIzaSyC3amkviJ3ysQSwHyFWEZBq2hWrRjobabw";
+        private readonly UserManager<IndividualPerson> _userManager;
 
-        public RouteController(ApplicationDbContext context)
+        public RouteController(ApplicationDbContext context, UserManager<IndividualPerson> userManager)
         {
             _context = context;
         }
@@ -31,6 +34,8 @@ namespace GarbageMap.Controllers
 
         public async Task<RouteModel> BuildRoute()
         {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
             var startPoint = new PointModel // start point
             {
                 Address = "Start point",
@@ -46,7 +51,7 @@ namespace GarbageMap.Controllers
             };
 
             var points = new List<PointModel>();
-            var places = _context.CameraPlaces.Include(x => x.Address).ToList();
+            var places = _context.CameraPlaces.Where(x => x.OrganizationId == userId).Include(x => x.Address).ToList();
 
             points.Add(startPoint);
             foreach (var place in places)
@@ -66,7 +71,7 @@ namespace GarbageMap.Controllers
             var pointsOrder = GetPointsOrder(ref matrix, 0);
 
             var orderedPoints = new List<PointModel>();
-            for (int i = 0; i < pointsOrder.Count - 1; i++)
+            for (int i = 0; i < pointsOrder.Count; i++)
             {
                 var index = pointsOrder[i];
                 orderedPoints.Add(points[index]);
