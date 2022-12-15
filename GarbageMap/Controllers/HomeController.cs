@@ -48,9 +48,14 @@ namespace GarbageMap.Controllers
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var user = await _userManager.FindByIdAsync(userId);
-            var role = (await _userManager.GetRolesAsync(user))[0];
+            string role = "Anonymous";
+            if (user != null)
+            {
+                role = (await _userManager.GetRolesAsync(user))[0];
+            }
+
             List<CameraPlace> cameraPlaces = null;
-            if (role == "admin")
+            if (role == "admin" || role == "Anonymous")
             {
                 cameraPlaces = _context?.CameraPlaces?.ToList();
             }
@@ -70,6 +75,12 @@ namespace GarbageMap.Controllers
                     avarage = cans.Average(x => x.FulfiledPercentage);
                 }
 
+
+                if (role == "admin")
+                {
+                    var org = _context?.IndividualPeople.Where(x => x.Id == place.OrganizationId).FirstOrDefault();
+                    place.Organization = org;
+                }
                 cameraPlaceViewModels.Add(
                     new CameraPlaceViewModel
                     {

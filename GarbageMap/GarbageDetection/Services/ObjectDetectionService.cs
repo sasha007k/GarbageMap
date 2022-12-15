@@ -41,13 +41,13 @@ namespace GarbageMap.GarbageDetection.Services
             {
                 foreach (var box in _filteredBoxes)
                 {
-                    //// process output boxes
+                    // Process output boxes
                     var x = (uint) Math.Max(box.Dimensions.X, 0);
                     var y = (uint) Math.Max(box.Dimensions.Y, 0);
                     var width = (uint) Math.Min(originalWidth - x, box.Dimensions.Width);
                     var height = (uint) Math.Min(originalHeight - y, box.Dimensions.Height);
 
-                    // fit to current image size
+                    // Fit to current image size
                     x = (uint) originalWidth * x / ImageSettings.ImageWidth;
                     y = (uint) originalHeight * y / ImageSettings.ImageHeight;
                     width = (uint) originalWidth * width / ImageSettings.ImageWidth;

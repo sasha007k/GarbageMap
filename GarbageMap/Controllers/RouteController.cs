@@ -1,12 +1,14 @@
 ﻿using GarbageMap.Models;
 using GarbageMap.Models.ApiModels;
 using GarbageMap.Models.DbModels;
+using GarbageMap.Models.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
@@ -20,9 +22,9 @@ namespace GarbageMap.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly string APIKEY = "AIzaSyC3amkviJ3ysQSwHyFWEZBq2hWrRjobabw";
-        private readonly UserManager<IndividualPerson> _userManager;
+        private const double CAR_CAPACITY = 15000.0;
 
-        public RouteController(ApplicationDbContext context, UserManager<IndividualPerson> userManager)
+        public RouteController(ApplicationDbContext context)
         {
             _context = context;
         }
@@ -51,17 +53,24 @@ namespace GarbageMap.Controllers
             };
 
             var points = new List<PointModel>();
-            var places = _context.CameraPlaces.Where(x => x.OrganizationId == userId).Include(x => x.Address).ToList();
+            var places = GetNotGreenCameraPlaces(userId);
+
+            var approximateCapacity = 0.0;
+            foreach (var place in places)
+            {
+                approximateCapacity += place.TotalCapacity;
+            }
+
 
             points.Add(startPoint);
             foreach (var place in places)
             {
                 points.Add(new PointModel // garbage points
                 {
-                    Address = $"{place.Address.Street}, {place.Address.HouseNumber}",
-                    Latitude = place.Latitude,
-                    Longitude = place.Longitude,
-                    CameraPlaceId = place.Id
+                    Address = $"{place.CameraPlace.Address.Street}, {place.CameraPlace.Address.HouseNumber}",
+                    Latitude = place.CameraPlace.Latitude,
+                    Longitude = place.CameraPlace.Longitude,
+                    CameraPlaceId = place.CameraPlace.Id
                 });
             }
             points.Add(endPoint);
@@ -85,6 +94,32 @@ namespace GarbageMap.Controllers
             };
 
             return routeModel;
+        }
+
+        private List<CameraPlaceAndTotalCapacity> GetNotGreenCameraPlaces(string userId)
+        {
+            var notGreenPlaces = new List<CameraPlaceAndTotalCapacity>();
+            var cameraPlaces = _context.CameraPlaces.Where(x => x.OrganizationId == userId).Include(x => x.Address).ToList();
+            var garbageCans = _context?.GarbageCans?.Include(g => g.CameraPlace)
+                .Include(g => g.GarbageCanType).ToList();
+            foreach (var place in cameraPlaces)
+            {
+                var cansOnSpecificPlace = garbageCans.Where(x => x.CameraPlaceId == place.Id);
+                var avarage = 0.0;
+                if (cansOnSpecificPlace.Any())
+                {
+                    avarage = cansOnSpecificPlace.Average(x => x.FulfiledPercentage);
+                }
+
+                if (avarage >= 80)
+                {
+                    var totalCapacity = cansOnSpecificPlace.Select(g => g.GarbageCanType.Capacity).Sum();
+                    notGreenPlaces.Add(new CameraPlaceAndTotalCapacity 
+                    { CameraPlace = place, AverageFullFil = avarage, TotalCapacity = totalCapacity });
+                }
+            }
+
+            return notGreenPlaces;
         }
 
         private int GetDistance(double latitude, double longitude, double otherLatitude, double otherLongitude)

@@ -62,6 +62,7 @@
                 map: map
             });
 
+            var isWindowOpen = false;
             $.getJSON('@Url.Action("GetAllCameraPlaces", "Home")', function (data) {
 
                 $.each(data, function (i, item) {
@@ -70,24 +71,26 @@
                         'map': map
                     });
 
-                    if (item.averageFullfill < 40) {
+                    if (item.averageFullfill < 80) {
                         marker.setIcon('https://maps.google.com/mapfiles/ms/icons/green-dot.png')
-                    } else if (item.averageFullfill < 75) {
-                        marker.setIcon('https://maps.google.com/mapfiles/ms/icons/yellow-dot.png')
                     } else {
                         marker.setIcon('https://maps.google.com/mapfiles/ms/icons/red-dot.png')
                     }
 
-                    // Для каждого объекта добавляем доп. информацию, выводимую в отдельном окне
-                    //var infowindow = new google.maps.InfoWindow({
-                    //    content: "<div class='stationInfo'><h2>Станция " + item.PlaceName + "</h2><div><h4>Линия метро: "
-                    //        + item.Line + "</h4></div><div><h4>Пассажиропоток: " + item.Traffic + " млн. человек</h4></div></div>"
-                    //});
 
-                    // обработчик нажатия на маркер объекта
-                    //google.maps.event.addListener(marker, 'click', function () {
-                    //    infowindow.open(map, marker);
-                    //});
+                    var infowindow = new google.maps.InfoWindow({
+                        content: "<div class='stationInfo'><p>Organization: " + item.place.organization.fullName + "</p></br><p>Approx. occup.: " + item.averageFullfill + "%</p></div>"
+                    });
+
+                    google.maps.event.addListener(marker, 'click', function () {
+                        if (isWindowOpen) {
+                            prev_infowindow.close();
+                        }
+
+                        prev_infowindow = infowindow;
+                        infowindow.open(map, marker);
+                        isWindowOpen = true;
+                    });
                 })
 
                 var startPossitionMarker = new google.maps.Marker({
